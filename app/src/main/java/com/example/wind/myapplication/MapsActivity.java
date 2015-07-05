@@ -7,6 +7,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.CameraUpdateFactory;
 
 public class MapsActivity extends FragmentActivity {
 
@@ -60,6 +61,17 @@ public class MapsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        //Test Marker
+        mMap.addMarker(new MarkerOptions().position(new LatLng(43.6617, -79.3950)).title("UofT"));
+        centerMapOnCity();
+    }
+
+    private void centerMapOnCity() {
+        //TODO: Change this assignment using the City Data structure after Steve is good
+        double CityLat = 43.7; //Toronto Lat
+        double CityLng = -79.4; //Toronto Lng
+
+        //Zoom into desired City location at map Startup
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(CityLat,CityLng),12.0f));
     }
 }
