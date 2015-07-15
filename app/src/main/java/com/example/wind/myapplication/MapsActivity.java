@@ -4,6 +4,8 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.support.v7.widget.SearchView;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
@@ -14,12 +16,29 @@ import android.view.MenuItem;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
+
+import java.io.IOException;
+import java.util.List;
 
 public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+
+    //Temporary variable for Storing Toronto Coordinates
+    double centerTOLat = 43.7;
+    double centerTOLng = -79.4;
+
+    //Bounding Box for Geocoder Search
+    double lowerLeftTOLat = 43.3451;
+    double lowerLeftTOLng = -79.3821;
+    double upperRightTOLat = 43.5119;
+    double upperRightTOLng = -79.0700;
+
+    //Current search Marker handle...
+    Marker searchMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +77,7 @@ public class MapsActivity extends AppCompatActivity {
         handleIntent(intent);
     }
 
+    //Handle different intents...
     private void handleIntent(Intent intent) {
 
         //Handle Search Intent...
@@ -68,8 +88,45 @@ public class MapsActivity extends AppCompatActivity {
         }
     }
 
+    //Search up the LatLng of the input address string (within Toronto)
+    //Place a marker and zoom in to that location...
     private void doLocationSearch(String address) {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(43.6617, -79.3950)).title(address));
+        LatLng zoomAddress = getLocationFromAddress(address);
+        if (zoomAddress != null) {
+            if (searchMarker != null) searchMarker.remove();
+            searchMarker = mMap.addMarker(new MarkerOptions().position(zoomAddress).title(address));
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(zoomAddress, 15.0f));
+        }
+        else {
+            centerMapOnCity();
+        }
+    }
+
+    //Search the string address using Geocoder API
+    private LatLng getLocationFromAddress(String strAddress) {
+
+        Geocoder coder = new Geocoder(this);
+        List<Address> address;
+        LatLng p1 = null;
+
+        try {
+            address = coder.getFromLocationName(strAddress, 5/*,
+                                                lowerLeftTOLat, lowerLeftTOLng,
+                                                upperRightTOLat, upperRightTOLng*/);
+            if (address == null) {
+                return null;
+            }
+            Address location = address.get(0);
+            location.getLatitude();
+            location.getLongitude();
+
+            p1 = new LatLng((location.getLatitude()),(location.getLongitude()));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return p1;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -126,11 +183,7 @@ public class MapsActivity extends AppCompatActivity {
     }
 
     private void centerMapOnCity() {
-        //TODO: Change this assignment using the City Data structure after Steve is good
-        double CityLat = 43.7; //Toronto Lat
-        double CityLng = -79.4; //Toronto Lng
-
         //Zoom into desired City location at map Startup
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(CityLat,CityLng),12.0f));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(centerTOLat,centerTOLng),12.0f));
     }
 }
