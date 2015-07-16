@@ -15,6 +15,7 @@ import android.view.MenuItem;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -26,6 +27,7 @@ import java.util.List;
 public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private UiSettings mUiSettings;
 
     //Temporary variable for Storing Toronto Coordinates
     double centerTOLat = 43.7;
@@ -113,7 +115,7 @@ public class MapsActivity extends AppCompatActivity {
             address = coder.getFromLocationName(strAddress, 5/*,
                                                 lowerLeftTOLat, lowerLeftTOLng,
                                                 upperRightTOLat, upperRightTOLng*/);
-            if (address == null) {
+            if (address.isEmpty()) {
                 return null;
             }
             Address location = address.get(0);
@@ -178,8 +180,11 @@ public class MapsActivity extends AppCompatActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        //Test Marker
+        mUiSettings = mMap.getUiSettings();
         centerMapOnCity();
+        mMap.setMyLocationEnabled(true);
+        mUiSettings.setZoomControlsEnabled(true);
+        mUiSettings.setCompassEnabled(true);
     }
 
     private void centerMapOnCity() {
