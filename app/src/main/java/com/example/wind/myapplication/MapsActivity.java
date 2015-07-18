@@ -3,9 +3,11 @@ package com.example.wind.myapplication;
 import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.SearchView;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
@@ -24,35 +26,46 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import java.io.IOException;
 import java.util.List;
 
+import com.google.maps.android.SphericalUtil;
+
 public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private UiSettings mUiSettings;
+
+    //Temporary Toronto LatLng
+    LatLng torontoCoordinates;
 
     //Temporary variable for Storing Toronto Coordinates
     double centerTOLat = 43.7;
     double centerTOLng = -79.4;
 
     //Bounding Box for Geocoder Search
-    double lowerLeftTOLat = 43.3451;
-    double lowerLeftTOLng = -79.3821;
-    double upperRightTOLat = 43.5119;
-    double upperRightTOLng = -79.0700;
+    double lowerLeftTOLat = 43.58;
+    double lowerLeftTOLng = -79.55;
+    double upperRightTOLat = 43.95;
+    double upperRightTOLng = -79.25;
 
     //Current search Marker handle...
     Marker searchMarker;
+
+    //Alert dialog
+    final Context context = this;
+    AlertDialog.Builder alertDialogBuilder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
+        setUpBadAddressAlertIfNeeded();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+        setUpBadAddressAlertIfNeeded();
     }
 
     @Override
@@ -100,6 +113,11 @@ public class MapsActivity extends AppCompatActivity {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(zoomAddress, 15.0f));
         }
         else {
+            // create alert dialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            // show it
+            alertDialog.show();
+
             centerMapOnCity();
         }
     }
@@ -109,26 +127,37 @@ public class MapsActivity extends AppCompatActivity {
 
         Geocoder coder = new Geocoder(this);
         List<Address> address;
+        Address location;
+        double old_distance, new_distance;
         LatLng p1 = null;
+        LatLng p2 = null;
+
+        old_distance = Double.POSITIVE_INFINITY;
 
         try {
-            address = coder.getFromLocationName(strAddress, 5/*,
+            address = coder.getFromLocationName(strAddress, 5,
                                                 lowerLeftTOLat, lowerLeftTOLng,
-                                                upperRightTOLat, upperRightTOLng*/);
+                                                upperRightTOLat, upperRightTOLng);
             if (address.isEmpty()) {
                 return null;
             }
-            Address location = address.get(0);
-            location.getLatitude();
-            location.getLongitude();
 
-            p1 = new LatLng((location.getLatitude()),(location.getLongitude()));
+            //Choose the address that is closest to current selected city
+            for (int i=0; i<address.size(); i++) {
+                location = address.get(i);
+                p1 = new LatLng((location.getLatitude()),(location.getLongitude()));
+                new_distance = SphericalUtil.computeDistanceBetween(torontoCoordinates, p1);
+                if (new_distance<old_distance) {
+                    old_distance = new_distance;
+                    p2 = p1;
+                }
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return p1;
+        return p2;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -189,6 +218,27 @@ public class MapsActivity extends AppCompatActivity {
 
     private void centerMapOnCity() {
         //Zoom into desired City location at map Startup
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(centerTOLat,centerTOLng),12.0f));
+        torontoCoordinates = new LatLng(centerTOLat,centerTOLng);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(torontoCoordinates, 12.0f));
     }
+
+    private void setUpBadAddressAlertIfNeeded() {
+
+        if (alertDialogBuilder == null ) {
+            alertDialogBuilder = new AlertDialog.Builder(context);
+            // set title
+            alertDialogBuilder.setTitle("Bad Address :(");
+            alertDialogBuilder
+                    .setMessage("Click OK to go back to Map and perform a new Search!")
+                    .setCancelable(false)
+                    .setNegativeButton("OK!", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // if this button is clicked, just close
+                            // the dialog box and do nothing
+                            dialog.cancel();
+                        }
+                    });
+        }
+    }
+
 }
