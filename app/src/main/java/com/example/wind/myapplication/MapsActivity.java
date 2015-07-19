@@ -1,5 +1,13 @@
 package com.example.wind.myapplication;
 
+import android.app.ProgressDialog;
+import android.nfc.Tag;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
+import java.io.BufferedReader;
+import java.util.HashMap;
+import java.util.Set;
+
 import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.Context;
@@ -18,6 +26,7 @@ import android.view.MenuItem;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -32,6 +41,8 @@ public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private UiSettings mUiSettings;
+    HashMap<LatLng,ParkingLot> ParkingDataHash;
+    private ProgressDialog pDialog;
 
     //Temporary Toronto LatLng
     LatLng torontoCoordinates;
@@ -56,6 +67,10 @@ public class MapsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Excute the Parsing Functions in onCreate make sure the data is ready when needed to be used.
+        ParkingDataHash = new HashMap<LatLng,ParkingLot>();
+        //TODO: Later, there will be a selection menu which allows us to call different Paring Functions for each city
+        new TorontoCity().execute(ParkingDataHash);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
         setUpBadAddressAlertIfNeeded();
@@ -211,6 +226,11 @@ public class MapsActivity extends AppCompatActivity {
     private void setUpMap() {
         mUiSettings = mMap.getUiSettings();
         centerMapOnCity();
+        try {
+            createParkingMakers();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
         mMap.setMyLocationEnabled(true);
         mUiSettings.setZoomControlsEnabled(true);
         mUiSettings.setCompassEnabled(true);
@@ -241,4 +261,11 @@ public class MapsActivity extends AppCompatActivity {
         }
     }
 
+    private void createParkingMakers() throws IOException {
+        //Log.d("Parkings", ParkingDataHash.toString());
+        Set<LatLng> coordinates = ParkingDataHash.keySet();
+        for (LatLng coordinate : coordinates) {
+            mMap.addMarker(new MarkerOptions().position(coordinate).title(ParkingDataHash.get(coordinate).getAddress()).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+        }
+    }
 }
