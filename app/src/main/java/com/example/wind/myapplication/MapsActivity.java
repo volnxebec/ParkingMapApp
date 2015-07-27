@@ -2,6 +2,7 @@ package com.example.wind.myapplication;
 
 import android.app.ProgressDialog;
 import android.nfc.Tag;
+import android.opengl.GLException;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import java.io.BufferedReader;
@@ -22,6 +23,8 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -40,6 +43,7 @@ import com.google.maps.android.SphericalUtil;
 public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+
     private UiSettings mUiSettings;
     HashMap<LatLng,ParkingLot> ParkingDataHash;
     private ProgressDialog pDialog;
@@ -212,11 +216,26 @@ public class MapsActivity extends AppCompatActivity {
                     .getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
+                mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                    @Override
+                    public View getInfoWindow(Marker arg0) {
+                        return null;
+                    }
+
+                    @Override
+                    public View getInfoContents(Marker marker) {
+                        View v = getLayoutInflater().inflate(R.layout.info_window, null);
+                        TextView tvLocality = (TextView) v.findViewById(R.id.tv_locality);
+                        TextView tvGeneral = (TextView) v.findViewById(R.id.tv_general);
+                        tvLocality.setText(marker.getTitle());
+                        tvGeneral.setText(marker.getSnippet());
+                        return v;
+                    }
+                });
                 setUpMap();
             }
         }
     }
-
     /**
      * This is where we can add markers or lines, add listeners or move the camera. In this case, we
      * just add a marker near Africa.
@@ -265,7 +284,9 @@ public class MapsActivity extends AppCompatActivity {
         //Log.d("Parkings", ParkingDataHash.toString());
         Set<LatLng> coordinates = ParkingDataHash.keySet();
         for (LatLng coordinate : coordinates) {
-            mMap.addMarker(new MarkerOptions().position(coordinate).title(ParkingDataHash.get(coordinate).getAddress()).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            String GeneralContent = null;
+            GeneralContent = "Half Hour Rate: " + ParkingDataHash.get(coordinate).getHalfHourRate() + "$\n" + "Capacity: " + ParkingDataHash.get(coordinate).getCapacity() + "\nMax Height (m): " + ParkingDataHash.get(coordinate).getMaxHeight();
+            mMap.addMarker(new MarkerOptions().position(coordinate).title(ParkingDataHash.get(coordinate).getAddress()).snippet(GeneralContent).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
         }
     }
 }
